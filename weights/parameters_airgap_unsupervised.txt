@@ -1,0 +1,2 @@
+load_name: weights/stage1.pth
+air_delta_scale_mm: 60.0

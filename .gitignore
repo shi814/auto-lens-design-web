@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+.env
+.DS_Store
+
+# Runtime-generated outputs
+web_outputs/
+exports/**/*.json
+exports/**/*.zmx
+exports/**/*.csv
+
