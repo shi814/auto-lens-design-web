@@ -33,6 +33,7 @@ AIRGAP_PARAMS = PROJECT_ROOT / "weights" / "parameters_airgap_unsupervised.txt"
 # Paper-fixed experiment assets.
 ORIGIN_CSV = PROJECT_ROOT / "data" / "normalization_reference.csv"
 MATERIAL_CSV = PROJECT_ROOT / "glass" / "material_catalog.csv"
+TEMPLATE_CSV = PROJECT_ROOT / "data" / "inference_templates.csv"
 
 # Test-set layout constants (raw split layout: [fn, hfov, seq_len, 39 index, 13 type]).
 MAX_SURF = 13
@@ -41,10 +42,13 @@ N_INDEX = MAX_SURF * N_WL
 
 SUPPORTED_SEQ_LENGTHS = (7, 9, 11, 13)
 
-# How many arrangements to generate for the requested (F#, HFOV).
+# The historical dense test reused these same 100 structures per lens count at
+# every point in a 12 x 9 specification grid. The web app must do the same;
+# random material sequences are out-of-distribution for this model.
 NUM_PER_SEQ_LENGTH = 100
 NUM_ARRANGEMENTS = NUM_PER_SEQ_LENGTH * len(SUPPORTED_SEQ_LENGTHS)
-GEN_SEED = 42
+AVAILABLE_FN_VALUES = np.linspace(9.75, 17.5, 12, dtype=np.float64)
+AVAILABLE_HFOV_VALUES = np.linspace(8.5, 10.0, 9, dtype=np.float64)
 
 # Number of best (lowest-RMS, spec-passing) systems to present.
 NUM_TOP_SYSTEMS = 3
@@ -74,70 +78,39 @@ def infer_efl_sidecar_csv(metrics_csv: Path) -> Path | None:
 
 
 # ---------------------------------------------------------------------------
-# 1) Generate a mixed 3-6 lens test set for the requested (F#, HFOV).
+# 1) Build the same fixed-template test set used by the historical dense test.
 # ---------------------------------------------------------------------------
-def _load_material_catalog() -> np.ndarray:
-    """Load exactly the refractive-index groups used by the paper model."""
-    material = np.loadtxt(MATERIAL_CSV, delimiter=",", dtype=float)
-    return np.unique(np.asarray(material[:, :3], dtype=np.float64), axis=0)
-
-
-def _generate_combos(catalog: np.ndarray, pattern: list[str], num_samples: int, seed: int) -> np.ndarray:
-    """Randomly assemble face sequences following an Air/Glass pattern."""
-    air = np.array([1.0, 1.0, 1.0], dtype=np.float64)
-    glass = [np.asarray(row, dtype=np.float64) for row in catalog if not np.allclose(row, air)]
-    n_glass = sum(1 for p in pattern if p == "G")
-
-    rng = np.random.default_rng(seed)
-    combos = []
-    for _ in range(num_samples):
-        glass_idx = rng.integers(low=0, high=len(glass), size=n_glass)
-        seq = []
-        g_iter = iter(glass_idx)
-        for p in pattern:
-            seq.append(air if p == "A" else glass[next(g_iter)])
-        combos.append(np.stack(seq, axis=0).reshape(-1))
-    return np.vstack(combos)
-
-
-def _type_sequence(seq_len: int) -> list[int]:
-    """Strict alternating A/G type sequence, padded with zeros to MAX_SURF."""
-    type_seq = [i % 2 for i in range(seq_len)]
-    type_seq += [0] * (MAX_SURF - seq_len)
-    return type_seq
+def snap_to_test_grid(target_fn: float, target_hfov: float) -> tuple[float, float]:
+    """Snap a request to the nearest specification used by the dense test."""
+    fn = float(AVAILABLE_FN_VALUES[np.argmin(np.abs(AVAILABLE_FN_VALUES - target_fn))])
+    hfov = float(
+        AVAILABLE_HFOV_VALUES[
+            np.argmin(np.abs(AVAILABLE_HFOV_VALUES - target_hfov))
+        ]
+    )
+    return fn, hfov
 
 
 def generate_arrangement_csv(
     target_fn: float,
     target_hfov: float,
     out_csv: Path,
-    *,
-    num_per_seq_length: int = NUM_PER_SEQ_LENGTH,
-    seed: int = GEN_SEED,
 ) -> int:
-    """Write a mixed 3-6 lens test set for the requested (F#, HFOV)."""
-    catalog = _load_material_catalog()
-
-    rows: list[list[float]] = []
-    for offset, seq_len in enumerate(SUPPORTED_SEQ_LENGTHS):
-        pattern = ["A" if i % 2 == 0 else "G" for i in range(seq_len)]
-        combos = _generate_combos(catalog, pattern, num_per_seq_length, seed + offset)
-        for arr in combos:
-            material = np.concatenate(
-                [arr, np.zeros(N_INDEX - arr.shape[0], dtype=np.float64)]
-            )
-            rows.append(
-                [
-                    float(target_fn),
-                    float(target_hfov),
-                    seq_len,
-                    *material.tolist(),
-                    *_type_sequence(seq_len),
-                ]
-            )
-
+    """Write the 400 fixed structures used by the historical large test."""
+    rows = np.loadtxt(TEMPLATE_CSV, delimiter=",", dtype=np.float64)
+    if rows.ndim == 1:
+        rows = rows.reshape(1, -1)
+    if rows.shape[0] != NUM_ARRANGEMENTS:
+        raise ValueError(
+            f"Expected {NUM_ARRANGEMENTS} inference templates, got {rows.shape[0]}"
+        )
+    rows = rows.copy()
+    rows[:, 0] = float(target_fn)
+    rows[:, 1] = float(target_hfov)
     out_csv.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(rows).to_csv(out_csv, header=None, index=False, encoding="utf-8")
+    pd.DataFrame(rows).to_csv(
+        out_csv, header=None, index=False, encoding="utf-8"
+    )
     return len(rows)
 
 
@@ -865,13 +838,19 @@ def _run_full_pipeline(target_fn: float, target_hfov: float) -> list:
     """Run the whole pipeline and return a list of computed-system dicts
     (empty list means no qualifying system). Rendering is done by the caller
     from session_state so results survive download-button reruns."""
+    evaluated_fn, evaluated_hfov = snap_to_test_grid(target_fn, target_hfov)
+    st.session_state["evaluated_spec"] = (evaluated_fn, evaluated_hfov)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    base_out_dir = PROJECT_ROOT / "web_outputs" / f"fn{target_fn:g}_hfov{target_hfov:g}_{timestamp}"
+    base_out_dir = (
+        PROJECT_ROOT
+        / "web_outputs"
+        / f"fn{evaluated_fn:g}_hfov{evaluated_hfov:g}_{timestamp}"
+    )
     base_out_dir.mkdir(parents=True, exist_ok=True)
 
     test_csv = base_out_dir / "generated_test_input.csv"
     with st.spinner("Generating test set..."):
-        generate_arrangement_csv(target_fn, target_hfov, test_csv)
+        generate_arrangement_csv(evaluated_fn, evaluated_hfov, test_csv)
 
     with st.spinner("Running second-stage (AirGap) test and filtering..."):
         metrics_csv = run_second_stage_test(test_csv, base_out_dir / "stage2_test")
@@ -918,7 +897,14 @@ def run_app() -> None:
     _inject_css()
     st.title("ScanLens Lens System Generator")
 
-    required_assets = (AIRGAP_CKPT, STAGE1_CKPT, AIRGAP_PARAMS, ORIGIN_CSV, MATERIAL_CSV)
+    required_assets = (
+        AIRGAP_CKPT,
+        STAGE1_CKPT,
+        AIRGAP_PARAMS,
+        ORIGIN_CSV,
+        MATERIAL_CSV,
+        TEMPLATE_CSV,
+    )
     missing_assets = [path for path in required_assets if not path.exists()]
     if missing_assets:
         st.error("Required paper-model asset not found: " + ", ".join(map(str, missing_assets)))
@@ -948,6 +934,12 @@ def run_app() -> None:
     # button (which triggers a Streamlit rerun) does not clear the results.
     results = st.session_state.get("results")
     if results is not None:
+        evaluated_spec = st.session_state.get("evaluated_spec")
+        if evaluated_spec is not None:
+            st.caption(
+                "Nearest tested specification used: "
+                f"F# {evaluated_spec[0]:.6g}, HFOV {evaluated_spec[1]:.6g} deg"
+            )
         if not results:
             st.warning("No qualifying system found.")
         else:
