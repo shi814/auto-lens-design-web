@@ -26,7 +26,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_EXPORT_EPD = 4.0
 
 # Second-stage (AirGap unsupervised) checkpoint used for the test run.
-AIRGAP_CKPT = PROJECT_ROOT / "weights" / "airgap_stage2.pth"
+AIRGAP_CKPT = PROJECT_ROOT / "weights" / "AirGapUnsupervised_final.pth"
 STAGE1_CKPT = PROJECT_ROOT / "weights" / "stage1.pth"
 AIRGAP_PARAMS = PROJECT_ROOT / "weights" / "parameters_airgap_unsupervised.txt"
 

@@ -21,7 +21,7 @@ auto-lens-design-web/
 │   └── inference_model.py         # Network architecture used for inference
 ├── weights/
 │   ├── stage1.pth
-│   ├── airgap_stage2.pth
+│   ├── AirGapUnsupervised_final.pth
 │   └── parameters_airgap_unsupervised.txt
 ├── data/
 │   └── normalization_reference.csv
