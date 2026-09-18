@@ -234,16 +234,16 @@ class LensTransformer(nn.Module):
         self.opt = opt
         self.ri_atol = float(os.environ.get("SCANLENS_RI_ATOL", "1e-5"))
         self.Y_real_max_by_len = {
-            7: torch.tensor([43, 60, 35, 48], dtype=torch.float32).to(_DEVICE),
-            9: torch.tensor([41, 13, 13, 13, 7], dtype=torch.float32).to(_DEVICE),
-            11: torch.tensor([44, 13, 8, 13, 9, 57], dtype=torch.float32).to(_DEVICE),
-            13: torch.tensor([85, 50, 33, 48, 32, 32, 32], dtype=torch.float32).to(_DEVICE),
+            7: torch.tensor([50, 25, 25, 80], dtype=torch.float32).to(_DEVICE),
+            9: torch.tensor([50, 20, 20, 20, 80], dtype=torch.float32).to(_DEVICE),
+            11: torch.tensor([50, 18, 18, 18, 18, 80], dtype=torch.float32).to(_DEVICE),
+            13: torch.tensor([50, 15, 15, 15, 15, 15, 80], dtype=torch.float32).to(_DEVICE),
         }
         self.Y_real_min_by_len = {
-            7: torch.tensor([10, 0.2, 0.1, 0.2], dtype=torch.float32).to(_DEVICE),
-            9: torch.tensor([15, 1, 0.2, 1, 0.1], dtype=torch.float32).to(_DEVICE),
-            11: torch.tensor([39, 1, 0.2, 1, 0.2, 49], dtype=torch.float32).to(_DEVICE),
-            13: torch.tensor([10, 0.2, 0.2, 2, 0.2, 1, 0.2], dtype=torch.float32).to(_DEVICE),
+            7: torch.tensor([10, 0.5, 0.5, 1], dtype=torch.float32).to(_DEVICE),
+            9: torch.tensor([10, 0.5, 0.5, 0.5, 1], dtype=torch.float32).to(_DEVICE),
+            11: torch.tensor([10, 0.5, 0.5, 0.5, 0.5, 1], dtype=torch.float32).to(_DEVICE),
+            13: torch.tensor([10, 0.5, 0.5, 0.5, 0.5, 0.5, 1], dtype=torch.float32).to(_DEVICE),
         }
         self.Y_real_max_7 = self.Y_real_max_by_len[7]
         self.Y_real_min_7 = self.Y_real_min_by_len[7]
