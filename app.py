@@ -47,8 +47,6 @@ SUPPORTED_SEQ_LENGTHS = (7, 9, 11, 13)
 # random material sequences are out-of-distribution for this model.
 NUM_PER_SEQ_LENGTH = 100
 NUM_ARRANGEMENTS = NUM_PER_SEQ_LENGTH * len(SUPPORTED_SEQ_LENGTHS)
-AVAILABLE_FN_VALUES = np.linspace(9.75, 17.5, 12, dtype=np.float64)
-AVAILABLE_HFOV_VALUES = np.linspace(8.5, 10.0, 9, dtype=np.float64)
 
 # Number of best (lowest-RMS, spec-passing) systems to present.
 NUM_TOP_SYSTEMS = 3
@@ -78,19 +76,8 @@ def infer_efl_sidecar_csv(metrics_csv: Path) -> Path | None:
 
 
 # ---------------------------------------------------------------------------
-# 1) Build the same fixed-template test set used by the historical dense test.
+# 1) Build a fixed-template test set for the requested specification.
 # ---------------------------------------------------------------------------
-def snap_to_test_grid(target_fn: float, target_hfov: float) -> tuple[float, float]:
-    """Snap a request to the nearest specification used by the dense test."""
-    fn = float(AVAILABLE_FN_VALUES[np.argmin(np.abs(AVAILABLE_FN_VALUES - target_fn))])
-    hfov = float(
-        AVAILABLE_HFOV_VALUES[
-            np.argmin(np.abs(AVAILABLE_HFOV_VALUES - target_hfov))
-        ]
-    )
-    return fn, hfov
-
-
 def generate_arrangement_csv(
     target_fn: float,
     target_hfov: float,
@@ -838,19 +825,17 @@ def _run_full_pipeline(target_fn: float, target_hfov: float) -> list:
     """Run the whole pipeline and return a list of computed-system dicts
     (empty list means no qualifying system). Rendering is done by the caller
     from session_state so results survive download-button reruns."""
-    evaluated_fn, evaluated_hfov = snap_to_test_grid(target_fn, target_hfov)
-    st.session_state["evaluated_spec"] = (evaluated_fn, evaluated_hfov)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     base_out_dir = (
         PROJECT_ROOT
         / "web_outputs"
-        / f"fn{evaluated_fn:g}_hfov{evaluated_hfov:g}_{timestamp}"
+        / f"fn{target_fn:g}_hfov{target_hfov:g}_{timestamp}"
     )
     base_out_dir.mkdir(parents=True, exist_ok=True)
 
     test_csv = base_out_dir / "generated_test_input.csv"
     with st.spinner("Generating test set..."):
-        generate_arrangement_csv(evaluated_fn, evaluated_hfov, test_csv)
+        generate_arrangement_csv(target_fn, target_hfov, test_csv)
 
     with st.spinner("Running second-stage (AirGap) test and filtering..."):
         metrics_csv = run_second_stage_test(test_csv, base_out_dir / "stage2_test")
@@ -934,12 +919,6 @@ def run_app() -> None:
     # button (which triggers a Streamlit rerun) does not clear the results.
     results = st.session_state.get("results")
     if results is not None:
-        evaluated_spec = st.session_state.get("evaluated_spec")
-        if evaluated_spec is not None:
-            st.caption(
-                "Nearest tested specification used: "
-                f"F# {evaluated_spec[0]:.6g}, HFOV {evaluated_spec[1]:.6g} deg"
-            )
         if not results:
             st.warning("No qualifying system found.")
         else:
