@@ -925,6 +925,40 @@ def run_app() -> None:
             for data in results:
                 _display_one_system(data)
 
+    st.divider()
+    st.header("About")
+    st.markdown(
+        """
+This web application demonstrates the **Catalog-Lens Selection Transformer
+(CLST)** described in our manuscript. For each requested F-number and half
+field of view, the trained model generates scan-lens prescriptions from real
+off-the-shelf lens candidates. The generated systems are evaluated by
+differentiable ray tracing, filtered using optical-performance criteria, and
+ranked by RMS spot radius. Lens layouts, spot diagrams, distortion plots, and
+Zemax files are provided for the qualifying designs.
+
+### Research article
+
+This application accompanies the following manuscript:
+
+**Jiaqi Shi, Runmu Su, Jingang Zhang, and Yunfeng Nie,
+"Automated Off-the-Shelf Lens Design Using a Physics-Informed
+Transformer-Based Classification Network."**
+
+If you use this website, its generated designs, or the accompanying code in
+academic work, please cite the article above. Full journal and DOI information
+will be added after publication.
+
+### Disclaimer
+
+The generated systems are intended as optical-design starting points.
+Although each result is checked by the evaluation pipeline, users should
+independently verify ray validity, surface clearance, manufacturability, and
+catalog availability in professional optical-design software before practical
+use.
+        """
+    )
+
 
 if __name__ == "__main__":
     run_app()
