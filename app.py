@@ -34,6 +34,8 @@ AIRGAP_PARAMS = PROJECT_ROOT / "weights" / "parameters_airgap_unsupervised.txt"
 ORIGIN_CSV = PROJECT_ROOT / "data" / "normalization_reference.csv"
 MATERIAL_CSV = PROJECT_ROOT / "glass" / "material_catalog.csv"
 TEMPLATE_CSV = PROJECT_ROOT / "data" / "inference_templates.csv"
+VUB_LOGO = PROJECT_ROOT / "assets" / "vub_logo.png"
+UCAS_LOGO = PROJECT_ROOT / "assets" / "ucas_logo.png"
 
 # Test-set layout constants (raw split layout: [fn, hfov, seq_len, 39 index, 13 type]).
 MAX_SURF = 13
@@ -881,6 +883,7 @@ def run_app() -> None:
     st.set_page_config(page_title="ScanLens Lens System Generator", layout="wide")
     _inject_css()
     st.title("ScanLens Lens System Generator")
+    st.caption("Entrance pupil diameter (ENPD) = 4 mm")
 
     required_assets = (
         AIRGAP_CKPT,
@@ -889,6 +892,8 @@ def run_app() -> None:
         ORIGIN_CSV,
         MATERIAL_CSV,
         TEMPLATE_CSV,
+        VUB_LOGO,
+        UCAS_LOGO,
     )
     missing_assets = [path for path in required_assets if not path.exists()]
     if missing_assets:
@@ -896,10 +901,13 @@ def run_app() -> None:
         return
 
     st.subheader("Target Parameters")
-    st.caption("Suggested range: HFOV 8-10 deg, F# 9.75-17.5")
+    st.caption("Suggested range: HFOV 8-10 deg, focal length 39-70 mm")
     col1, col2 = st.columns(2)
-    target_fn = col1.number_input(
-        "Target F#", value=9.75, format="%.6f", help="Suggested range: 9.75-17.5"
+    target_focal_length = col1.number_input(
+        "Target focal length (mm)",
+        value=39.0,
+        format="%.6f",
+        help="Suggested range: 39-70 mm",
     )
     target_hfov = col2.number_input(
         "Target HFOV (deg)", value=8.5, format="%.6f", help="Suggested range: 8-10 deg"
@@ -910,7 +918,8 @@ def run_app() -> None:
         st.session_state["results"] = None
         try:
             st.session_state["results"] = _run_full_pipeline(
-                float(target_fn), float(target_hfov)
+                float(target_focal_length) / DEFAULT_EXPORT_EPD,
+                float(target_hfov),
             )
         except Exception as exc:
             st.exception(exc)
@@ -930,7 +939,7 @@ def run_app() -> None:
     st.markdown(
         """
 This web application demonstrates the **Catalog-Lens Selection Transformer
-(CLST)** described in our manuscript. For each requested F-number and half
+(CLST)** described in our manuscript. For each requested focal length and half
 field of view, the trained model generates scan-lens prescriptions from real
 off-the-shelf lens candidates. The generated systems are evaluated by
 differentiable ray tracing, filtered using optical-performance criteria, and
@@ -959,6 +968,14 @@ catalog availability in professional optical-design software before practical
 use.
         """
     )
+
+    logo_left, logo_right = st.columns(
+        [1, 2.3], gap="large", vertical_alignment="center"
+    )
+    with logo_left:
+        st.image(str(VUB_LOGO), width="stretch")
+    with logo_right:
+        st.image(str(UCAS_LOGO), width="stretch")
 
 
 if __name__ == "__main__":
