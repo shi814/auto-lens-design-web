@@ -970,7 +970,7 @@ use.
     )
 
     _, logo_left, logo_right, _ = st.columns(
-        [1.8, 3.6, 1.8, 1.8], gap="small", vertical_alignment="center"
+        [1.6, 3.6, 2.2, 1.6], gap="small", vertical_alignment="center"
     )
     with logo_left:
         st.image(str(UCAS_LOGO), width="stretch")
