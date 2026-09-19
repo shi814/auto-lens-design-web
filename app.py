@@ -970,12 +970,12 @@ use.
     )
 
     logo_left, logo_right = st.columns(
-        [1, 2.3], gap="large", vertical_alignment="center"
+        [2.2, 1], gap="large", vertical_alignment="center"
     )
     with logo_left:
-        st.image(str(VUB_LOGO), width="stretch")
+        st.image(str(UCAS_LOGO), width=560)
     with logo_right:
-        st.image(str(UCAS_LOGO), width="stretch")
+        st.image(str(VUB_LOGO), width=280)
 
 
 if __name__ == "__main__":
