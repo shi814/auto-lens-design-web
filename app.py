@@ -941,7 +941,8 @@ Zemax files are provided for the qualifying designs.
 
 This application accompanies the following manuscript:
 
-**Jiaqi Shi, Runmu Su, Jingang Zhang, and Yunfeng Nie,
+**Jiaqi Shi, Runmu Su, Alejandro Madrid-Sánchez, Fabian Duerr,
+Jingang Zhang, and Yunfeng Nie,
 "Automated Off-the-Shelf Lens Design Using a Physics-Informed
 Transformer-Based Classification Network."**
 
