@@ -938,27 +938,19 @@ def run_app() -> None:
     st.header("About")
     st.markdown(
         """
-For every query, the requested focal length and half field of view are applied
-to 400 candidate structures spanning three to six lenses. The specifications
-and structures are passed to our trained **Catalog-Lens Selection Transformer
-(CLST)**, which selects real off-the-shelf lenses from the valid catalog
-candidates and predicts the corresponding air gaps. A second-stage model then
-refines the air gaps while preserving the selected lens identities.
+For each query, the target optical specifications are provided to our trained
+Catalog-Lens Selection Transformer (CLST), which generates optical designs
+using real off-the-shelf lens components and predicts the corresponding air
+gaps. The generated designs are then evaluated using differentiable ray
+tracing, and representative high-quality solutions are presented with a 2D
+lens layout, spot diagram, and distortion plot. Zemax (.zmx) and JSON files are
+also available for download.
 
-Each inferred design is evaluated by differentiable ray tracing and filtered
-according to RMS spot radius, distortion, image-space telecentricity, and
-effective-focal-length error. Among the qualifying systems, the designs with
-the lowest RMS spot radii are presented with a 2D lens layout, spot diagram,
-and distortion plot. Zemax (.zmx) and JSON files are available for download.
-
-The neural network was trained using unsupervised physical feedback at the C,
-d, and F wavelengths in the visible spectrum. Its objective combines imaging
-performance, target-specification accuracy, ray validity, and structural
-feasibility. Unlike methods that infer fictitious glass properties, CLST
-selects lenses directly from real OTS candidate libraries. Although the
-evaluation pipeline rejects systems that fail its optical criteria, the
-generated results should be treated as design starting points and independently
-verified in professional optical-design software before practical use.
+CLST is trained with physics-based optical feedback in the visible spectrum
+and directly selects components from real OTS lens libraries rather than
+inferring fictitious glass properties. The generated systems are intended as
+practical starting points for further optical optimization and should be
+independently verified in professional optical-design software before use.
 
 ### Research article
 
