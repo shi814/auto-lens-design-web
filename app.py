@@ -938,13 +938,27 @@ def run_app() -> None:
     st.header("About")
     st.markdown(
         """
-This web application demonstrates the **Catalog-Lens Selection Transformer
-(CLST)** described in our manuscript. For each requested focal length and half
-field of view, the trained model generates scan-lens prescriptions from real
-off-the-shelf lens candidates. The generated systems are evaluated by
-differentiable ray tracing, filtered using optical-performance criteria, and
-ranked by RMS spot radius. Lens layouts, spot diagrams, distortion plots, and
-Zemax files are provided for the qualifying designs.
+For every query, the requested focal length and half field of view are applied
+to 400 candidate structures spanning three to six lenses. The specifications
+and structures are passed to our trained **Catalog-Lens Selection Transformer
+(CLST)**, which selects real off-the-shelf lenses from the valid catalog
+candidates and predicts the corresponding air gaps. A second-stage model then
+refines the air gaps while preserving the selected lens identities.
+
+Each inferred design is evaluated by differentiable ray tracing and filtered
+according to RMS spot radius, distortion, image-space telecentricity, and
+effective-focal-length error. Among the qualifying systems, the designs with
+the lowest RMS spot radii are presented with a 2D lens layout, spot diagram,
+and distortion plot. Zemax (.zmx) and JSON files are available for download.
+
+The neural network was trained using unsupervised physical feedback at the C,
+d, and F wavelengths in the visible spectrum. Its objective combines imaging
+performance, target-specification accuracy, ray validity, and structural
+feasibility. Unlike methods that infer fictitious glass properties, CLST
+selects lenses directly from real OTS candidate libraries. Although the
+evaluation pipeline rejects systems that fail its optical criteria, the
+generated results should be treated as design starting points and independently
+verified in professional optical-design software before practical use.
 
 ### Research article
 
@@ -959,13 +973,8 @@ If you use this website, its generated designs, or the accompanying code in
 academic work, please cite the article above. Full journal and DOI information
 will be added after publication.
 
-### Disclaimer
-
-The generated systems are intended as optical-design starting points.
-Although each result is checked by the evaluation pipeline, users should
-independently verify ray validity, surface clearance, manufacturability, and
-catalog availability in professional optical-design software before practical
-use.
+For personal communication regarding CLST, please contact Jingang Zhang at
+zhangjg@ucas.ac.cn or Yunfeng Nie at Yunfeng.Nie@vub.be.
         """
     )
 
