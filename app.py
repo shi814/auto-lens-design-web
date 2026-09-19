@@ -969,13 +969,13 @@ use.
         """
     )
 
-    logo_left, logo_right = st.columns(
-        [2.2, 1], gap="large", vertical_alignment="center"
+    _, logo_left, logo_right, _ = st.columns(
+        [1.8, 3.6, 1.8, 1.8], gap="small", vertical_alignment="center"
     )
     with logo_left:
-        st.image(str(UCAS_LOGO), width=560)
+        st.image(str(UCAS_LOGO), width="stretch")
     with logo_right:
-        st.image(str(VUB_LOGO), width=280)
+        st.image(str(VUB_LOGO), width="stretch")
 
 
 if __name__ == "__main__":
